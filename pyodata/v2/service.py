@@ -117,7 +117,7 @@ class ODataHttpResponse:
     def from_string(data):
         """Parse http response to status code, headers and body
 
-            Based on: https://stackoverflow.com/questions/24728088/python-parse-http-response-string
+        Based on: https://stackoverflow.com/questions/24728088/python-parse-http-response-string
         """
 
         class FakeSocket:
@@ -157,15 +157,15 @@ class ODataHttpResponse:
 
 class EntityKey:
     """An immutable entity-key, made up of either a single value (single)
-       or multiple key-value pairs (complex).
+     or multiple key-value pairs (complex).
 
-      Every entity must have an entity-key. The entity-key must be unique
-      within the entity-set, and thus defines an entity's identity.
+    Every entity must have an entity-key. The entity-key must be unique
+    within the entity-set, and thus defines an entity's identity.
 
-      The string representation of an entity-key is wrapped with parentheses,
-      such as (2), ('foo') or (a=1,foo='bar').
+    The string representation of an entity-key is wrapped with parentheses,
+    such as (2), ('foo') or (a=1,foo='bar').
 
-      Entity-keys are equal if their string representations are equal.
+    Entity-keys are equal if their string representations are equal.
     """
 
     TYPE_SINGLE = 0
@@ -296,10 +296,10 @@ class ODataHttpRequest:
     def execute(self):
         """Fetches HTTP response and returns processed result
 
-           Sends the query-request to the OData service, returning a client-side Enumerable for
-           subsequent in-memory operations.
+        Sends the query-request to the OData service, returning a client-side Enumerable for
+        subsequent in-memory operations.
 
-           Fetches HTTP response and returns processed result"""
+        Fetches HTTP response and returns processed result"""
 
         url = urljoin(self._url, self.get_path())
         # pylint: disable=assignment-from-none
@@ -318,12 +318,9 @@ class ODataHttpRequest:
         if body:
             self._logger.debug("  body: %s", body)
 
+        params = "&".join("%s=%s" % (k, v) for k, v in self.get_query_params().items())
         response = self._connection.request(
-            self.get_method(),
-            url,
-            headers=headers,
-            params=self.get_query_params(),
-            data=body,
+            self.get_method(), url, headers=headers, params=params, data=body
         )
 
         self._logger.debug("Received response")
@@ -364,7 +361,7 @@ class EntityGetRequest(ODataHttpRequest):
     def select(self, select):
         """Specifies a subset of properties to return.
 
-           @param select  a comma-separated list of selection clauses
+        @param select  a comma-separated list of selection clauses
         """
         self._select = select
         return self
@@ -372,7 +369,7 @@ class EntityGetRequest(ODataHttpRequest):
     def expand(self, expand):
         """Specifies related entities to expand inline as part of the response.
 
-           @param expand  a comma-separated list of navigation properties
+        @param expand  a comma-separated list of navigation properties
         """
         self._expand = expand
         return self
@@ -435,8 +432,8 @@ class NavEntityGetRequest(EntityGetRequest):
 class EntityCreateRequest(ODataHttpRequest):
     """Used for creating entities (POST operations of a single entity)
 
-       Call execute() to send the create-request to the OData service
-       and get the newly created entity."""
+    Call execute() to send the create-request to the OData service
+    and get the newly created entity."""
 
     def __init__(self, url, connection, handler, entity_set, last_segment=None):
         super(EntityCreateRequest, self).__init__(url, connection, handler)
@@ -469,7 +466,7 @@ class EntityCreateRequest(ODataHttpRequest):
 
     def _get_body(self):
         """Recursively builds a dictionary of values where some of the values
-           might be another entities.
+        might be another entities.
         """
 
         body = {}
@@ -495,8 +492,8 @@ class EntityCreateRequest(ODataHttpRequest):
     @staticmethod
     def _build_values(entity_type, entity):
         """Recursively converts a dictionary of values where some of the values
-           might be another entities (navigation properties) into the internal
-           representation.
+        might be another entities (navigation properties) into the internal
+        representation.
         """
 
         if isinstance(entity, list):
@@ -559,8 +556,8 @@ class EntityDeleteRequest(ODataHttpRequest):
 class EntityModifyRequest(ODataHttpRequest):
     """Used for modyfing entities (UPDATE/MERGE operations on a single entity)
 
-       Call execute() to send the update-request to the OData service
-       and get the modified entity."""
+    Call execute() to send the update-request to the OData service
+    and get the modified entity."""
 
     def __init__(self, url, connection, handler, entity_set, entity_key):
         super(EntityModifyRequest, self).__init__(url, connection, handler)
@@ -769,8 +766,8 @@ class FunctionRequest(QueryRequest):
 
 class EntityProxy:
     """An immutable OData entity instance, consisting of an identity (an
-       entity-set and a unique entity-key within that set), properties (typed,
-       named values), and links (references to other entities).
+    entity-set and a unique entity-key within that set), properties (typed,
+    named values), and links (references to other entities).
     """
 
     # pylint: disable=too-many-branches,too-many-nested-blocks
@@ -1090,16 +1087,233 @@ class GetEntitySetFilter:
         return GetEntitySetFilter.format_filter(self._proprty, "ne", value)
 
     def __lt__(self, value):
-        return GetEntitySetFilter.format_filter(self._proprty, 'lt', value)
+        return GetEntitySetFilter.format_filter(self._proprty, "lt", value)
 
     def __le__(self, value):
-        return GetEntitySetFilter.format_filter(self._proprty, 'le', value)
+        return GetEntitySetFilter.format_filter(self._proprty, "le", value)
 
     def __ge__(self, value):
-        return GetEntitySetFilter.format_filter(self._proprty, 'ge', value)
+        return GetEntitySetFilter.format_filter(self._proprty, "ge", value)
 
     def __gt__(self, value):
-        return GetEntitySetFilter.format_filter(self._proprty, 'gt', value)
+        return GetEntitySetFilter.format_filter(self._proprty, "gt", value)
+
+
+class FilterExpression:
+    """A class representing named expression of OData $filter"""
+
+    def __init__(self, **kwargs):
+        self._expressions = kwargs
+        self._other = None
+        self._operator = None
+
+    @property
+    def expressions(self):
+        """Get expressions where key is property name with the operator suffix
+        and value is the left hand side operand.
+        """
+
+        return self._expressions.items()
+
+    @property
+    def other(self):
+        """Get an instance of the other operand"""
+
+        return self._other
+
+    @property
+    def operator(self):
+        """The other operand"""
+
+        return self._operator
+
+    def __or__(self, other):
+        if self._other is not None:
+            raise RuntimeError("The FilterExpression already initialized")
+
+        self._other = other
+        self._operator = "or"
+        return self
+
+    def __and__(self, other):
+        if self._other is not None:
+            raise RuntimeError("The FilterExpression already initialized")
+
+        self._other = other
+        self._operator = "and"
+        return self
+
+
+class GetEntitySetFilterChainable:
+    """
+    Example expressions
+        FirstName='Tim'
+        FirstName__contains='Tim'
+        Age__gt=56
+        Age__gte=6
+        Age__lt=78
+        Age__lte=90
+        Age__range=(5,9)
+        FirstName__in=['Tim', 'Bob', 'Sam']
+        FirstName__startswith='Tim'
+        FirstName__endswith='mothy'
+        Addresses__Suburb='Chatswood'
+        Addresses__Suburb__contains='wood'
+    """
+
+    OPERATORS = [
+        "startswith",
+        "endswith",
+        "lt",
+        "lte",
+        "gt",
+        "gte",
+        "contains",
+        "range",
+        "in",
+        "length",
+        "eq",
+    ]
+
+    def __init__(self, entity_type, filter_expressions, exprs):
+        self._entity_type = entity_type
+        self._filter_expressions = filter_expressions
+        self._expressions = exprs
+
+    @property
+    def expressions(self):
+        """Get expressions as a list of tuples where the first item
+        is a property name with the operator suffix and the second item
+        is a left hand side value.
+        """
+
+        return self._expressions.items()
+
+    def proprty_obj(self, name):
+        """Returns a model property for a particular property"""
+
+        return self._entity_type.proprty(name)
+
+    def _decode_and_combine_filter_expression(self, filter_expression):
+        filter_expressions = [
+            self._decode_expression(expr, val)
+            for expr, val in filter_expression.expressions
+        ]
+        return self._combine_expressions(filter_expressions)
+
+    def _process_query_objects(self):
+        """Processes FilterExpression objects to OData lookups"""
+
+        filter_expressions = []
+
+        for expr in self._filter_expressions:
+            lhs_expressions = self._decode_and_combine_filter_expression(expr)
+
+            if expr.other is not None:
+                rhs_expressions = self._decode_and_combine_filter_expression(expr.other)
+                filter_expressions.append(
+                    f"({lhs_expressions}) {expr.operator} ({rhs_expressions})"
+                )
+            else:
+                filter_expressions.append(lhs_expressions)
+
+        return filter_expressions
+
+    def _process_expressions(self):
+        filter_expressions = [
+            self._decode_expression(expr, val) for expr, val in self.expressions
+        ]
+
+        filter_expressions.extend(self._process_query_objects())
+
+        return filter_expressions
+
+    def _decode_expression(self, expr, val):
+        field = None
+        # field_heirarchy = []
+        operator = "eq"
+        exprs = expr.split("__")
+
+        for part in exprs:
+            if self._entity_type.has_proprty(part):
+                field = part
+                # field_heirarchy.append(part)
+            elif part in self.__class__.OPERATORS:
+                operator = part
+            else:
+                raise ValueError(f'"{part}" is not a valid property or operator')
+        # field = '/'.join(field_heirarchy)
+
+        # target_field = self.proprty_obj(field_heirarchy[-1])
+        expression = self._build_expression(field, operator, val)
+
+        return expression
+
+    # pylint: disable=no-self-use
+    def _combine_expressions(self, expressions):
+        return " and ".join(expressions)
+
+    # pylint: disable=too-many-return-statements, too-many-branches
+    def _build_expression(self, field_name, operator, value):
+        target_field = self.proprty_obj(field_name)
+
+        if operator not in ["length", "in", "range"]:
+            value = target_field.to_literal(value)
+
+        if operator == "lt":
+            return f"{field_name} lt {value}"
+
+        if operator == "lte":
+            return f"{field_name} le {value}"
+
+        if operator == "gte":
+            return f"{field_name} ge {value}"
+
+        if operator == "gt":
+            return f"{field_name} gt {value}"
+
+        if operator == "startswith":
+            return f"startswith({field_name}, {value}) eq true"
+
+        if operator == "endswith":
+            return f"endswith({field_name}, {value}) eq true"
+
+        if operator == "length":
+            value = int(value)
+            return f"length({field_name}) eq {value}"
+
+        if operator in ["contains"]:
+            return f"substringof({value}, {field_name}) eq true"
+
+        if operator == "range":
+            if not isinstance(value, (tuple, list)):
+                raise TypeError(
+                    "Range must be tuple or list not {}".format(type(value))
+                )
+
+            if len(value) != 2:
+                raise ValueError("Only two items can be passed in a range.")
+
+            low_bound = target_field.to_literal(value[0])
+            high_bound = target_field.to_literal(value[1])
+
+            return f"{field_name} gte {low_bound} and {field_name} lte {high_bound}"
+
+        if operator == "in":
+            literal_values = (
+                f"{field_name} eq {target_field.to_literal(item)}" for item in value
+            )
+            return " or ".join(literal_values)
+
+        if operator == "eq":
+            return f"{field_name} eq {value}"
+
+        raise ValueError(f"Invalid expression {operator}")
+
+    def __str__(self):
+        expressions = self._process_expressions()
+        result = self._combine_expressions(expressions)
+        return quote(result)
 
 
 class GetEntitySetRequest(QueryRequest):
@@ -1116,6 +1330,21 @@ class GetEntitySetRequest(QueryRequest):
         proprty = self._entity_type.proprty(name)
         return GetEntitySetFilter(proprty)
 
+    def _set_filter(self, filter_val):
+        filter_text = self._filter + " and " if self._filter else ""
+        filter_text += filter_val
+        self._filter = filter_text
+
+    def filter(self, *args, **kwargs):
+        if args and len(args) == 1 and isinstance(args[0], str):
+            self._filter = args[0]
+        else:
+            self._set_filter(
+                str(GetEntitySetFilterChainable(self._entity_type, args, kwargs))
+            )
+
+        return self
+
 
 class EntitySetProxy:
     """EntitySet Proxy"""
@@ -1123,8 +1352,8 @@ class EntitySetProxy:
     def __init__(self, service, entity_set, alias=None, parent_last_segment=None):
         """Creates new Entity Set object
 
-            @param alias  in case the entity set is access via assossiation
-            @param parent_last_segment  in case of association also parent key must be used
+        @param alias  in case the entity set is access via assossiation
+        @param parent_last_segment  in case of association also parent key must be used
         """
         self._service = service
         self._entity_set = entity_set
@@ -1458,7 +1687,7 @@ class EntityContainer:
 class FunctionContainer:
     """Set of Function proxies
 
-       Call a server-side functions (also known as a service operation).
+    Call a server-side functions (also known as a service operation).
     """
 
     def __init__(self, service):

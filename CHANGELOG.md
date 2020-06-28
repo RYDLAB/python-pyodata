@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 ### Added
+- Specify PATCH, PUT, or MERGE method for EntityUpdateRequest - Barton Ip
+- Add a Service wide configuration (e.g. http.update\_method) - Jakub Filak
+- <, <=, >, >= operators on GetEntitySetFilter - Barton Ip
+- Django style filtering - Barton Ip
+
+### Fixed
+- URL encode $filter contents - Barton Ip
+
+## [1.5.0]
+
+### Added
+- support for Edm.Float - Jakub Filak
+
+### Changed
+- handle GET EntitySet payload without the member results - Jakub Filak
+- both Literal and JSON DateTimes has Timezone set to UTC - Jakub Filak
+
+### Fixed
+- removed superfluous debug print when parsing FunctionImports from metadata - Jakub Filak
+- property 'Nullable' attributes are correctly parsed and respected - Vasilii Khomutov
+- use correct type of deserialization of Literal (URL) structure values - Jakub Filak
+- null values are correctly handled - Jakub Filak
+
+## [1.4.0]
+
+### Added
 - Client can be created from local metadata - Jakub Filak
 - support all standard EDM schema versions - Jakub Filak
 
