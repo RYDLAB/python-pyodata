@@ -12,7 +12,7 @@ def metadata():
     current_directory = os.path.split(path_to_current_file)[0]
     path_to_file = os.path.join(current_directory, "metadata.xml")
 
-    return open(path_to_file, 'rb').read()
+    return open(path_to_file, "rb").read()
 
 
 @pytest.fixture
@@ -29,11 +29,11 @@ def xml_builder_factory():
             self.schema_is_enabled = True
 
             self.namespaces = {
-                'edmx': "http://schemas.microsoft.com/ado/2007/06/edmx",
-                'sap': 'http://www.sap.com/Protocols/SAPData',
-                'edm': 'http://schemas.microsoft.com/ado/2008/09/edm',
-                'm': 'http://schemas.microsoft.com/ado/2007/08/dataservices/metadata',
-                'd': 'http://schemas.microsoft.com/ado/2007/08/dataservices',
+                "edmx": "http://schemas.microsoft.com/ado/2007/06/edmx",
+                "sap": "http://www.sap.com/Protocols/SAPData",
+                "edm": "http://schemas.microsoft.com/ado/2008/09/edm",
+                "m": "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata",
+                "d": "http://schemas.microsoft.com/ado/2007/08/dataservices",
             }
 
             self.custom_edmx_prologue = None
@@ -42,18 +42,20 @@ def xml_builder_factory():
             self.custom_data_services_prologue = None
             self.custom_data_services_epilogue = None
 
-            self._reference = '\n<edmx:Reference xmlns:edmx="http://docs.oasis-open.org/odata/ns/edmx" Uri="https://example.sap.corp/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName=\'%2FIWBEP%2FVOC_COMMON\',Version=\'0001\',SAP__Origin=\'LOCAL\')/$value">' + \
-                              '\n<edmx:Include Namespace="com.sap.vocabularies.Common.v1" Alias="Common"/>' + \
-                              '\n</edmx:Reference>'
+            self._reference = (
+                "\n<edmx:Reference xmlns:edmx=\"http://docs.oasis-open.org/odata/ns/edmx\" Uri=\"https://example.sap.corp/sap/opu/odata/IWFND/CATALOGSERVICE;v=2/Vocabularies(TechnicalName='%2FIWBEP%2FVOC_COMMON',Version='0001',SAP__Origin='LOCAL')/$value\">"
+                + '\n<edmx:Include Namespace="com.sap.vocabularies.Common.v1" Alias="Common"/>'
+                + "\n</edmx:Reference>"
+            )
 
-            self._schemas = ''
+            self._schemas = ""
 
         def add_schema(self, namespace, xml_definition):
             """Add schema element"""
             self._schemas += f""""\n<Schema xmlns:d="{self.namespaces["d"]}" xmlns:m="{self.namespaces["m"]}" xmlns="{
             self.namespaces["edm"]}" Namespace="{namespace}" xml:lang="en" sap:schema-version="1">"""
             self._schemas += "\n" + xml_definition
-            self._schemas += '\n</Schema>'
+            self._schemas += "\n</Schema>"
 
         def serialize(self):
             """Returns full metadata XML document"""
@@ -86,7 +88,7 @@ def xml_builder_factory():
             if self.custom_edmx_epilogue:
                 epilogue = self.custom_edmx_epilogue
             else:
-                epilogue = '\n</edmx:Edmx>'
+                epilogue = "\n</edmx:Edmx>"
             return epilogue
 
         def _data_services_prologue(self):
@@ -100,7 +102,7 @@ def xml_builder_factory():
             if self.custom_data_services_epilogue:
                 prologue = self.custom_data_services_epilogue
             else:
-                prologue = '\n</edmx:DataServices>'
+                prologue = "\n</edmx:DataServices>"
             return prologue
 
     return XMLBuilder
@@ -118,7 +120,7 @@ def schema(metadata):
 def assert_logging_policy(mock_warning, *args):
     """Assert if an warning was outputted by PolicyWarning """
     assert logging.Logger.warning is mock_warning
-    mock_warning.assert_called_with('[%s] %s', *args)
+    mock_warning.assert_called_with("[%s] %s", *args)
 
 
 def assert_request_contains_header(headers, name, value):

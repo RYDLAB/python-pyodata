@@ -27,7 +27,9 @@ class HttpError(PyODataException):
 
     def __new__(cls, message, response):
         if HttpError.VendorType is not None:
-            return super(HttpError, cls).__new__(HttpError.VendorType, message, response)
+            return super(HttpError, cls).__new__(
+                HttpError.VendorType, message, response
+            )
 
         return super(HttpError, cls).__new__(cls, message, response)
 

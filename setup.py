@@ -18,29 +18,29 @@ from setuptools import setup, find_packages
 
 source_location = os.path.abspath(os.path.dirname(__file__))
 
-NAME = 'python-pyodata'
+NAME = "python-pyodata"
 HERE = os.path.abspath(os.path.dirname(__file__))
+
+
 def _read(name):
-    with open(os.path.join(HERE, name), 'r', encoding='utf-8') as f:
+    with open(os.path.join(HERE, name), "r", encoding="utf-8") as f:
         return f.read()
+
 
 setup(
     name="pyodata",
-    version=_read('VERSION').strip(),
+    version=_read("VERSION").strip(),
     license="Apache License Version 2.0",
     url="https://github.com/SAP/python-pyodata",
     author="Jakub Filak, Michal Nezerka, Patrik Petrik, Lubos Mjachky",
     author_email="jakub.filak@sap.com, michal.nezerka@sap.com, patrik.petrik@sap.com, lubos.mjachky@sap.com",
     description="Enterprise ready Python OData client",
-    long_description=_read('README.md'),
+    long_description=_read("README.md"),
     long_description_content_type="text/markdown",
     packages=find_packages(exclude=("tests")),
     zip_safe=False,
-    install_requires=[
-        "lxml>=3.7.3",
-    ],
-    extras_require={
-    },
+    install_requires=["lxml>=3.7.3",],
+    extras_require={},
     tests_require=[
         "codecov",
         "flake8",
@@ -53,17 +53,16 @@ setup(
         "pytest-cov",
         "sphinx",
     ],
-    classifiers=[ # cf. http://pypi.python.org/pypi?%3Aaction=list_classifiers
-        'Development Status :: 5 - Production/Stable',
-        'Environment :: Web Environment',
-        'Intended Audience :: Developers',
-        'License :: OSI Approved :: Apache Software License',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python :: 3.6',
-        'Topic :: Internet :: WWW/HTTP',
-        'Topic :: Software Development',
-        'Topic :: Software Development :: Libraries :: Python Modules',
+    classifiers=[  # cf. http://pypi.python.org/pypi?%3Aaction=list_classifiers
+        "Development Status :: 5 - Production/Stable",
+        "Environment :: Web Environment",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Apache Software License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3.6",
+        "Topic :: Internet :: WWW/HTTP",
+        "Topic :: Software Development",
+        "Topic :: Software Development :: Libraries :: Python Modules",
     ],
-    entry_points = {
-    },
+    entry_points={},
 )
