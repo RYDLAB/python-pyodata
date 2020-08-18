@@ -816,7 +816,6 @@ class EntityProxy:
             for prop in self._entity_type.nav_proprties:
 
                 if prop.name in proprties:
-
                     # entity type of navigation property
                     prop_etype = prop.to_role.entity_type
 
@@ -1294,9 +1293,15 @@ class EntitySetProxy:
                 return content
 
             try:
-                entities = content["d"]["results"]
+                try:
+                    entities = content["d"]["results"]
+                except KeyError:
+                    entities = content["value"]
             except KeyError:
-                entities = content["value"]
+                if isinstance(content, list):
+                    entities = content
+                else:
+                    entities = [content]
 
             result = []
             for props in entities:
