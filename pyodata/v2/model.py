@@ -1304,9 +1304,55 @@ class Schema:
                     param.typ = schema.get_type(param.type_info)
                 decl.function_imports[efn.name] = efn
 
-            for association_set in schema_node.xpath(
+            association_sets = schema_node.xpath(
                 "edm:EntityContainer/edm:AssociationSet", namespaces=config.namespaces
-            ):
+            )
+            if not association_sets:
+                entity_container = schema_node.xpath(
+                    "edm:EntityContainer", namespaces=config.namespaces
+                )
+                if entity_container:
+                    entity_container = entity_container[0]
+                    for association in decl.associations.keys():
+                        elem = etree.Element(
+                            "{%s}AssociationSet" % config.namespaces.get("edm"),
+                            attrib={
+                                "Name": association,
+                                "Association": "%s.%s" % (namespace, association),
+                            },
+                        )
+                        elem.append(
+                            etree.Element(
+                                "{%s}End" % config.namespaces.get("edm"),
+                                attrib={
+                                    "Role": decl.associations[association]
+                                    .end_roles[0]
+                                    .role,
+                                    "EntitySet": decl.associations[association]
+                                    .end_roles[0]
+                                    .entity_type_name,
+                                },
+                            )
+                        )
+                        elem.append(
+                            etree.Element(
+                                "{%s}End" % config.namespaces.get("edm"),
+                                attrib={
+                                    "Role": decl.associations[association]
+                                    .end_roles[1]
+                                    .role,
+                                    "EntitySet": decl.associations[association]
+                                    .end_roles[1]
+                                    .entity_type_name,
+                                },
+                            )
+                        )
+                        entity_container.append(elem)
+                association_sets = schema_node.xpath(
+                    "edm:EntityContainer/edm:AssociationSet",
+                    namespaces=config.namespaces,
+                )
+            for association_set in association_sets:
                 assoc_set = AssociationSet.from_etree(association_set, config)
                 try:
                     try:
@@ -2743,7 +2789,6 @@ class FunctionImport(Identifier):
 
         rt_type = function_import_node.get("ReturnType")
         rt_info = None if rt_type is None else Types.parse_type_name(rt_type)
-        print(name, rt_type, rt_info)
 
         parameters = dict()
         for param in function_import_node.xpath(
