@@ -912,6 +912,9 @@ class EntityProxy:
             if (
                 association_set.end_by_entity_set(end.entity_set_name).role
                 == navigation_property.to_role.role
+            ) or (
+                association_set.end_by_role(end.role).role
+                == navigation_property.to_role.role
             ):
                 navigation_entity_set = self._service.schema.entity_set(
                     end.entity_set_name, association_info.namespace
@@ -1407,6 +1410,9 @@ class EntitySetProxy:
         for end in association_set.end_roles:
             if (
                 association_set.end_by_entity_set(end.entity_set_name).role
+                == navigation_property.to_role.role
+            ) or (
+                association_set.end_by_role(end.role).role
                 == navigation_property.to_role.role
             ):
                 navigation_entity_set = self._service.schema.entity_set(
