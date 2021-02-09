@@ -166,10 +166,10 @@ class Identifier:
 class Types:
     """Repository of all available OData types
 
-       Since each type has instance of appropriate type, this
-       repository acts as central storage for all instances. The
-       rule is: don't create any type instances if not necessary,
-       always reuse existing instances if possible
+    Since each type has instance of appropriate type, this
+    repository acts as central storage for all instances. The
+    rule is: don't create any type instances if not necessary,
+    always reuse existing instances if possible
     """
 
     # dictionary of all registered types (primitive, complex and collection variants)
@@ -273,12 +273,12 @@ class Types:
 class EdmStructTypeSerializer:
     """Basic implementation of (de)serialization for Edm complex types
 
-       All properties existing in related Edm type are taken
-       into account, others are ignored
+    All properties existing in related Edm type are taken
+    into account, others are ignored
 
-       TODO: it can happen that inifinite recurision occurs for cases
-       when property types are referencich each other. We need some research
-       here to avoid such cases.
+    TODO: it can happen that inifinite recurision occurs for cases
+    when property types are referencich each other. We need some research
+    here to avoid such cases.
     """
 
     @staticmethod
@@ -381,17 +381,17 @@ class EdmPrefixedTypTraits(TypTraits):
 class EdmDateTimeTypTraits(EdmPrefixedTypTraits):
     """Emd.DateTime traits
 
-       Represents date and time with values ranging from 12:00:00 midnight,
-       January 1, 1753 A.D. through 11:59:59 P.M, December 9999 A.D.
+    Represents date and time with values ranging from 12:00:00 midnight,
+    January 1, 1753 A.D. through 11:59:59 P.M, December 9999 A.D.
 
-       Literal form:
-       datetime'yyyy-mm-ddThh:mm[:ss[.fffffff]]'
-       NOTE: Spaces are not allowed between datetime and quoted portion.
-       datetime is case-insensitive
+    Literal form:
+    datetime'yyyy-mm-ddThh:mm[:ss[.fffffff]]'
+    NOTE: Spaces are not allowed between datetime and quoted portion.
+    datetime is case-insensitive
 
-       Example 1: datetime'2000-12-12T12:00'
-       JSON has following format: /Date(1516614510000)/
-       https://blogs.sap.com/2017/01/05/date-and-time-in-sap-gateway-foundation/
+    Example 1: datetime'2000-12-12T12:00'
+    JSON has following format: /Date(1516614510000)/
+    https://blogs.sap.com/2017/01/05/date-and-time-in-sap-gateway-foundation/
     """
 
     def __init__(self):
@@ -400,8 +400,8 @@ class EdmDateTimeTypTraits(EdmPrefixedTypTraits):
     def to_literal(self, value):
         """Convert python datetime representation to literal format
 
-           None: this could be done also via formatting string:
-           value.strftime('%Y-%m-%dT%H:%M:%S.%f')
+        None: this could be done also via formatting string:
+        value.strftime('%Y-%m-%dT%H:%M:%S.%f')
         """
 
         if value is None:
@@ -681,7 +681,11 @@ class VariableDeclaration(Identifier):
         self._type_info = type_info
         self._typ = None
 
-        self._nullable = bool(nullable)
+        self._nullable = bool(
+            nullable != "false"
+            if isinstance(nullable, str) and nullable != ""
+            else nullable
+        )
 
         if not max_length:
             self._max_length = None
@@ -834,8 +838,7 @@ class Schema:
         return self._config
 
     def typ(self, type_name, namespace=None):
-        """Returns either EntityType, ComplexType or EnumType that matches the name.
-        """
+        """Returns either EntityType, ComplexType or EnumType that matches the name."""
 
         for type_space in (self.entity_type, self.complex_type, self.enum_type):
             try:
@@ -1819,11 +1822,11 @@ class EntitySet(Identifier):
 class StructTypeProperty(VariableDeclaration):
     """Property of structure types (Entity/Complex type)
 
-       Type of the property can be:
-        * primitive type
-        * complex type
-        * enumeration type (in version 4)
-        * collection of one of previous
+    Type of the property can be:
+     * primitive type
+     * complex type
+     * enumeration type (in version 4)
+     * collection of one of previous
     """
 
     # pylint: disable=too-many-locals
@@ -2005,20 +2008,20 @@ class StructTypeProperty(VariableDeclaration):
 class NavigationTypeProperty(VariableDeclaration):
     """Defines a navigation property, which provides a reference to the other end of an association
 
-       Unlike properties defined with the Property element, navigation properties do not define the
-       shape and characteristics of data. They provide a way to navigate an association between two
-       entity types.
+    Unlike properties defined with the Property element, navigation properties do not define the
+    shape and characteristics of data. They provide a way to navigate an association between two
+    entity types.
 
-       Note that navigation properties are optional on both entity types at the ends of an association.
-       If you define a navigation property on one entity type at the end of an association, you do not
-       have to define a navigation property on the entity type at the other end of the association.
+    Note that navigation properties are optional on both entity types at the ends of an association.
+    If you define a navigation property on one entity type at the end of an association, you do not
+    have to define a navigation property on the entity type at the other end of the association.
 
-       The data type returned by a navigation property is determined by the multiplicity of its remote
-       association end. For example, suppose a navigation property, OrdersNavProp, exists on a Customer
-       entity type and navigates a one-to-many association between Customer and Order. Because the
-       remote association end for the navigation property has multiplicity many (*), its data type is
-       a collection (of Order). Similarly, if a navigation property, CustomerNavProp, exists on the Order
-       entity type, its data type would be Customer since the multiplicity of the remote end is one (1).
+    The data type returned by a navigation property is determined by the multiplicity of its remote
+    association end. For example, suppose a navigation property, OrdersNavProp, exists on a Customer
+    entity type and navigates a one-to-many association between Customer and Order. Because the
+    remote association end for the navigation property has multiplicity many (*), its data type is
+    a collection (of Order). Similarly, if a navigation property, CustomerNavProp, exists on the Order
+    entity type, its data type would be Customer since the multiplicity of the remote end is one (1).
     """
 
     def __init__(self, name, from_role_name, to_role_name, association_info):
@@ -2226,12 +2229,12 @@ class ReferentialConstraint:
 class Association:
     """Defines a relationship between two entity types.
 
-       An association must specify the entity types that are involved in
-       the relationship and the possible number of entity types at each
-       end of the relationship, which is known as the multiplicity.
-       The multiplicity of an association end can have a value of one (1),
-       zero or one (0..1), or many (*). This information is specified in
-       two child End elements.
+    An association must specify the entity types that are involved in
+    the relationship and the possible number of entity types at each
+    end of the relationship, which is known as the multiplicity.
+    The multiplicity of an association end can have a value of one (1),
+    zero or one (0..1), or many (*). This information is specified in
+    two child End elements.
     """
 
     def __init__(self, name):
@@ -3013,7 +3016,12 @@ class MetadataBuilder:
 def schema_from_xml(metadata_xml, namespaces=None):
     """Parses XML data and returns Schema representing OData Metadata"""
 
-    meta = MetadataBuilder(metadata_xml, config=Config(xml_namespaces=namespaces,))
+    meta = MetadataBuilder(
+        metadata_xml,
+        config=Config(
+            xml_namespaces=namespaces,
+        ),
+    )
 
     return meta.build()
 
