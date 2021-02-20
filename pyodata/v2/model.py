@@ -671,6 +671,12 @@ class Collection(Typ):
 
         return [self._item_type.traits.from_json(v) for v in value]
 
+    def to_json(self, value):
+        if not isinstance(value, list):
+            raise PyODataException("Bad format: invalid list value {}".format(value))
+
+        return [self._item_type.traits.to_json(v) for v in value]
+
 
 class VariableDeclaration(Identifier):
     MAXIMUM_LENGTH = -1
