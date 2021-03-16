@@ -504,7 +504,11 @@ class EntityCreateRequest(ODataHttpRequest):
         values = {}
         for key, val in entity.items():
             try:
-                val = entity_type.proprty(key).typ.traits.to_json(val)
+                proprty_typ = entity_type.proprty(key).typ
+                if val == False and proprty_typ.name != "Edm.Boolean":
+                    values[key] = None
+                    continue
+                val = proprty_typ.traits.to_json(val)
             except KeyError:
                 try:
                     nav_prop = entity_type.nav_proprty(key)
@@ -600,7 +604,11 @@ class EntityModifyRequest(ODataHttpRequest):
 
         for key, val in kwargs.items():
             try:
-                val = self._entity_type.proprty(key).typ.traits.to_json(val)
+                proprty_typ = self._entity_type.proprty(key).typ
+                if val == False and proprty_typ.name != "Edm.Boolean":
+                    self._values[key] = None
+                    continue
+                val = proprty_typ.traits.to_json(val)
             except KeyError:
                 raise PyODataException(
                     "Property {} is not declared in {} entity type".format(
