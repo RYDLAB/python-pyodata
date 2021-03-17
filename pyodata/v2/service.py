@@ -7,6 +7,7 @@
 # pylint: disable=too-many-lines
 
 import logging
+from collections import defaultdict
 from functools import partial
 import json
 import random
@@ -772,6 +773,32 @@ class FunctionRequest(QueryRequest):
         }
 
 
+class EntityFunctionRequest(FunctionRequest):
+    def __init__(
+        self, url, connection, handler, entity_set, entity_key, function_import
+    ):
+        self._logger = logging.getLogger(LOGGER_NAME)
+        super(EntityFunctionRequest, self).__init__(
+            url, connection, handler, function_import
+        )
+        self._entity_set = entity_set
+        self._entity_key = entity_key
+
+        self._logger.debug(
+            "New instance of EntityFunctionRequest for entity type: %s",
+            entity_set.entity_type.name,
+        )
+
+    def get_path(self):
+        return urljoin(
+            self._entity_set.name + self._entity_key.to_key_string(), self._last_segment
+        )
+
+    def get_method(self):
+        # pylint: disable=no-self-use
+        return super(EntityFunctionRequest, self).get_method() or "POST"
+
+
 class EntityProxy:
     """An immutable OData entity instance, consisting of an identity (an
     entity-set and a unique entity-key within that set), properties (typed,
@@ -1380,6 +1407,10 @@ class EntitySetProxy:
         self._key = entity_set.entity_type.key_proprties
         self._logger = logging.getLogger(LOGGER_NAME)
 
+        self._functions = dict()
+        for fimport in self._service.schema.entity_function_imports.get(self._name, []):
+            self._functions[fimport.name] = fimport
+
         self._logger.debug("New entity set proxy instance for %s", self._name)
 
     @property
@@ -1670,6 +1701,109 @@ class EntitySetProxy:
             delete_entity_handler,
             self._entity_set,
             entity_key,
+        )
+
+    def use_entity(self, key: EntityKey = None, method=None, **kwargs):
+        """Use the entity for call bind method"""
+
+        if key is not None and isinstance(key, EntityKey):
+            entity_key = key
+        else:
+            entity_key = EntityKey(self._entity_set.entity_type, key, **kwargs)
+
+        if method not in self._functions:
+            raise AttributeError(
+                "Function {0} not defined in {1}.".format(
+                    method, ",".join(list(self._functions.keys()))
+                )
+            )
+
+        fimport = self._service.schema.entity_function_import(self._name, method)
+
+        def function_import_handler(fimport, response):
+            """Get function call response from HTTP Response"""
+
+            if 300 <= response.status_code < 400:
+                raise HttpError(
+                    f"Function Import {fimport.name} requires Redirection which is not supported",
+                    response,
+                )
+
+            if response.status_code == 401:
+                raise HttpError(
+                    f"Not authorized to call Function Import {fimport.name}", response
+                )
+
+            if response.status_code == 403:
+                raise HttpError(
+                    f"Missing privileges to call Function Import {fimport.name}",
+                    response,
+                )
+
+            if response.status_code == 405:
+                raise HttpError(
+                    f"Despite definition Function Import {fimport.name} does not support HTTP {fimport.http_method}",
+                    response,
+                )
+
+            if 400 <= response.status_code < 500:
+                raise HttpError(
+                    f"Function Import {fimport.name} call has failed with status code {response.status_code}",
+                    response,
+                )
+
+            if response.status_code >= 500:
+                raise HttpError(
+                    f"Server has encountered an error while processing Function Import {fimport.name}",
+                    response,
+                )
+
+            if fimport.return_type is None:
+                if response.status_code != 204:
+                    logging.getLogger(LOGGER_NAME).warning(
+                        "The No Return Function Import %s has replied with HTTP Status Code %d instead of 204",
+                        fimport.name,
+                        response.status_code,
+                    )
+
+                if response.text:
+                    logging.getLogger(LOGGER_NAME).warning(
+                        "The No Return Function Import %s has returned content:\n%s",
+                        fimport.name,
+                        response.text,
+                    )
+
+                return None
+
+            if response.status_code != 200:
+                logging.getLogger(LOGGER_NAME).warning(
+                    "The Function Import %s has replied with HTTP Status Code %d instead of 200",
+                    fimport.name,
+                    response.status_code,
+                )
+
+            try:
+                response_data = response.json()["d"]
+            except KeyError:
+                response_data = response.json()
+
+            # 1. if return types is "entity type", return instance of appropriate entity proxy
+            if isinstance(fimport.return_type, model.EntityType):
+                entity_set = self._service.schema.entity_set(fimport.entity_set_name)
+                return EntityProxy(
+                    self._service, entity_set, fimport.return_type, response_data
+                )
+
+            # 2. return raw data for all other return types (primitives, complex types encoded in dicts, etc.)
+            return response_data
+
+        return EntityFunctionRequest(
+            self._service.url,
+            self._service.connection,
+            partial(function_import_handler, fimport),
+            self._entity_set,
+            entity_key,
+            fimport,
         )
 
 

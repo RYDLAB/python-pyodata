@@ -767,6 +767,7 @@ class Schema:
             self.enum_types = dict()
             self.entity_sets = dict()
             self.function_imports = dict()
+            self.entity_function_imports = collections.defaultdict(dict)
             self.associations = dict()
             self.association_sets = dict()
 
@@ -784,6 +785,9 @@ class Schema:
 
         def list_function_imports(self):
             return list(self.function_imports.values())
+
+        def list_entity_function_imports(self, entity):
+            return list(self.entity_function_imports[entity].values())
 
         def list_associations(self):
             return list(self.associations.values())
@@ -1032,6 +1036,31 @@ class Schema:
             )
         )
 
+    def entity_function_import(self, entity, function_import, namespace=None):
+        if namespace is not None:
+            try:
+                return self._decls[namespace].entity_function_imports[entity][
+                    function_import
+                ]
+            except KeyError:
+                raise KeyError(
+                    "FunctionImport {} for Entity {} does not exist in Schema Namespace {}".format(
+                        function_import, entity, namespace
+                    )
+                )
+
+        for decl in list(self._decls.values()):
+            try:
+                return decl.entity_function_imports[entity][function_import]
+            except KeyError:
+                pass
+
+        raise KeyError(
+            "FunctionImport {}  for Entity {}does not exist in any Schema Namespace".format(
+                function_import, entity
+            )
+        )
+
     @property
     def function_imports(self):
         return list(
@@ -1039,6 +1068,17 @@ class Schema:
                 *(decl.list_function_imports() for decl in list(self._decls.values()))
             )
         )
+
+    @property
+    def entity_function_imports(self):
+        result = collections.defaultdict(list)
+        for decl in list(self._decls.values()):
+            for entity in decl.entity_function_imports.keys():
+                result[entity].append(decl.list_entity_function_imports(entity))
+
+        return {
+            entity: list(itertools.chain(*result[entity])) for entity in result.keys()
+        }
 
     def association(self, association_name, namespace=None):
         if namespace is not None:
@@ -1311,7 +1351,17 @@ class Schema:
                     efn.return_type = schema.get_type(efn.return_type_info)
                 for param in efn.parameters:
                     param.typ = schema.get_type(param.type_info)
-                decl.function_imports[efn.name] = efn
+
+                _binding_type = list(
+                    filter(lambda p: p.name == "bindingParameter", efn.parameters)
+                )
+                if _binding_type:
+                    _entity = efn.parameters.pop(
+                        efn.parameters.index(_binding_type[0])
+                    ).typ.name
+                    decl.entity_function_imports[_entity][efn.name] = efn
+                else:
+                    decl.function_imports[efn.name] = efn
 
             association_sets = schema_node.xpath(
                 "edm:EntityContainer/edm:AssociationSet", namespaces=config.namespaces
